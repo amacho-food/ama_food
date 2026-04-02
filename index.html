@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>海士町飲食店情報</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;600;800&family=Noto+Sans+JP:wght@300;400;500&family=Noto+Serif+TC:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ocean: #1a3a4a;
+      --ocean-mid: #2a5568;
+      --sand: #f5f0e8;
+      --cream: #faf8f4;
+      --accent: #e05e2e;
+      --accent-soft: #f0845a;
+      --text-main: #1a1a1a;
+      --text-muted: #777;
+      --card-border: rgba(26,58,74,0.11);
+      --closed-bg: #f2efe9;
+      --closed-text: #aaa;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+
+    body {
+      font-family: 'Noto Sans JP', sans-serif;
+      background: var(--cream);
+      color: var(--text-main);
+      min-height: 100vh;
+    }
+
+    /* ── LANG BAR ── */
+    .lang-bar {
+      background: #12292e;
+      display: flex;
+      justify-content: flex-end;
+      padding: 6px 16px;
+      gap: 4px;
+    }
+    .lang-btn {
+      background: none;
+      border: 1px solid rgba(255,255,255,0.2);
+      color: rgba(255,255,255,0.55);
+      font-size: 11px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-family: inherit;
+      letter-spacing: 0.05em;
+      transition: all 0.18s;
+    }
+    .lang-btn.active, .lang-btn:hover {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+
+    /* ── HEADER ── */
+    header {
+      background: var(--ocean);
+      color: white;
+      padding: 22px 20px 20px;
+      position: relative;
+      overflow: hidden;
+    }
+    header::before {
+      content:''; position:absolute; bottom:-40px; right:-30px;
+      width:200px; height:200px; border-radius:50%;
+      background:rgba(255,255,255,0.04); pointer-events:none;
+    }
+    .site-title {
+      font-family: 'Shippori Mincho', serif;
+      font-size: 21px;
+      font-weight: 800;
+      color: var(--sand);
+      letter-spacing: 0.08em;
+      line-height: 1.3;
+    }
+    .site-subtitle {
+      font-size: 11px;
+      color: rgba(255,255,255,0.4);
+      letter-spacing: 0.12em;
+      margin-top: 3px;
+      font-weight: 300;
+    }
+    .header-meta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+    .today-date {
+      font-size: 12px;
+      color: rgba(255,255,255,0.5);
+      font-weight: 300;
+    }
+    .open-badge {
+      background: var(--accent);
+      color: white;
+      font-size: 11px;
+      font-weight: 500;
+      padding: 3px 11px;
+      border-radius: 20px;
+      letter-spacing: 0.04em;
+    }
+
+    /* ── TABS ── */
+    .tabs {
+      background: var(--ocean);
+      border-top: 1px solid rgba(255,255,255,0.07);
+      display: flex;
+      padding: 0 12px;
+      gap: 2px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .tabs::-webkit-scrollbar { display:none; }
+    .tab-btn {
+      background: none; border: none;
+      color: rgba(255,255,255,0.45);
+      font-family: 'Noto Sans JP', sans-serif;
+      font-size: 12px;
+      padding: 11px 12px 9px;
+      cursor: pointer;
+      white-space: nowrap;
+      border-bottom: 2px solid transparent;
+      transition: all 0.18s;
+      letter-spacing: 0.03em;
+    }
+    .tab-btn.active { color:white; border-bottom-color: var(--accent); font-weight:500; }
+    .tab-btn:hover { color: rgba(255,255,255,0.8); }
+
+    /* ── MAIN ── */
+    main {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 16px 14px 70px;
+    }
+
+    .section-label {
+      font-size: 10px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin: 22px 0 10px;
+      font-weight: 500;
+    }
+    .section-label:first-child { margin-top: 6px; }
+
+    /* ── CARD ── */
+    .card {
+      background: white;
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 16px 16px 14px;
+      margin-bottom: 10px;
+      transition: box-shadow 0.2s, transform 0.2s;
+    }
+    .card:hover { box-shadow: 0 4px 18px rgba(26,58,74,0.09); transform: translateY(-1px); }
+    .card.closed { background: var(--closed-bg); border-color: transparent; }
+    .card.closed:hover { transform:none; box-shadow:none; }
+
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 9px;
+    }
+    .shop-name {
+      font-family: 'Shippori Mincho', serif;
+      font-size: 17px;
+      font-weight: 600;
+      color: var(--ocean);
+      line-height: 1.35;
+    }
+    .card.closed .shop-name { color: var(--closed-text); }
+
+    .status-pill {
+      flex-shrink: 0;
+      font-size: 10px;
+      font-weight: 500;
+      padding: 3px 10px;
+      border-radius: 20px;
+      margin-top: 3px;
+      letter-spacing: 0.04em;
+    }
+    .pill-open { background: #e8f5e9; color: #2e7d32; }
+    .pill-closed { background: #ebebeb; color: #999; }
+
+    .dists {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 9px;
+      align-items: center;
+    }
+    .dist {
+      font-size: 11px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 3px;
+    }
+    .dist-from {
+      font-size: 10px;
+      color: #bbb;
+    }
+
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-bottom: 9px;
+    }
+    .tag {
+      background: var(--sand);
+      color: var(--ocean-mid);
+      font-size: 11px;
+      padding: 3px 9px;
+      border-radius: 5px;
+    }
+    .tag.star {
+      background: var(--accent);
+      color: white;
+      font-weight: 500;
+    }
+
+    .hours { font-size: 12px; color: var(--text-muted); line-height: 1.7; }
+    .hours-row { display:flex; gap:6px; align-items:baseline; }
+    .meal-label {
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 0.06em;
+      color: var(--ocean-mid);
+      background: rgba(42,85,104,0.08);
+      padding: 1px 6px;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+
+    .note {
+      font-size: 11px;
+      color: var(--accent-soft);
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(224,94,46,0.13);
+      line-height: 1.6;
+    }
+
+    .empty {
+      text-align:center; color:var(--text-muted);
+      font-size:13px; padding:40px 0;
+    }
+
+    /* ── EDIT TIP ── */
+    .edit-tip {
+      background: #0f2028;
+      color: rgba(255,255,255,0.55);
+      font-size: 11px;
+      padding: 9px 16px;
+      text-align: center;
+      line-height: 1.8;
+      letter-spacing: 0.04em;
+    }
+    .edit-tip code {
+      background: rgba(255,255,255,0.12);
+      color: var(--accent-soft);
+      font-family: monospace;
+      font-size: 11px;
+      padding: 1px 6px;
+      border-radius: 3px;
+    }
+
+    footer {
+      text-align:center; padding:18px;
+      font-size:11px; color:var(--text-muted);
+      letter-spacing:0.04em; line-height:1.6;
+    }
+
+    @media (min-width:480px) {
+      .shop-name { font-size:19px; }
+      main { padding:20px 20px 80px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ============================================================
+     ★★★ 毎日ここだけ更新する / 每天只更新這裡 ★★★
+
+     今日営業している店のIDを TODAY_OPEN に並べてください
+     把今天有營業的店的 ID 填入 TODAY_OPEN
+
+     ID一覧 / ID 清單:
+       happy_kitchen   Happy Kitchen Will
+       sushi_riku      鮨陸
+       okigyu          島生まれ島育ち 隠岐牛店
+       sentoraru       船渡来流亭
+       ajikura         海鮮処 味蔵
+       radice          Italian Cafe Radice
+       kikurage        きくらげちゃかぽんMOTEKOIYO
+       konya           紺屋
+       karan           食事処 華蘭
+       yachiyo         八千代
+       kamenoo         亀乃
+       hana_ponta      花屋のポンタ
+       kura            島のほけんしつ『蔵 kura』
+       ritokitchen     離島キッチン海士
+     ============================================================ -->
+<script>
+const TODAY_OPEN = [
+  "sushi_riku",
+  "happy_kitchen",
+  "okigyu",
+  "sentoraru",
+  "kikurage",
+  "yachiyo",
+  "kamenoo",
+  "radice",
+  "kura",
+];
+</script>
+<!-- ============================================================ -->
+
+<script>
+// ================================================================
+// 多言語テキスト / i18n strings
+// ================================================================
+const I18N = {
+  ja: {
+    siteTitle:    "海士町飲食店情報",
+    siteSubtitle: "Ama-cho Restaurant Guide",
+    openBadge:    n => `本日 ${n} 店舗が営業`,
+    openSection:  "本日営業",
+    closedSection:"本日休業",
+    open: "営業中", closed: "本日休業",
+    lunch:"昼", dinner:"夜",
+    walk:"徒歩", bike:"自転車", car:"車", min:"分",
+    fromPort: "菱浦港から",
+    noOpen: "該当する営業店舗はありません",
+    editTip: n => `毎日 <code>TODAY_OPEN = [...]</code> のIDを書き換えるだけで更新できます（本日 ${n} 店舗が設定中）`,
+    footer: "菱浦港（キンニャモニャセンター）からの所要時間目安 · 情報は随時更新",
+  },
+  zh: {
+    siteTitle:    "海士町飲食店資訊",
+    siteSubtitle: "Ama-cho Restaurant Guide",
+    openBadge:    n => `今日營業 ${n} 家`,
+    openSection:  "今日營業",
+    closedSection:"今日公休",
+    open: "營業中", closed: "今日公休",
+    lunch:"午餐", dinner:"晚餐",
+    walk:"步行", bike:"腳踏車", car:"開車", min:"分",
+    fromPort: "從菱浦港",
+    noOpen: "目前沒有符合條件的營業店家",
+    editTip: n => `每天只需更新 <code>TODAY_OPEN = [...]</code> 中的 ID 清單即可（目前設定 ${n} 家）`,
+    footer: "所需時間以菱浦港（キンニャモニャセンター）為起點估算・資訊隨時更新",
+  },
+  en: {
+    siteTitle:    "Ama-cho Restaurant Guide",
+    siteSubtitle: "海士町飲食店情報",
+    openBadge:    n => `${n} restaurant${n!==1?'s':''} open today`,
+    openSection:  "Open Today",
+    closedSection:"Closed Today",
+    open: "Open", closed: "Closed",
+    lunch:"Lunch", dinner:"Dinner",
+    walk:"Walk", bike:"Bike", car:"Car", min:" min",
+    fromPort: "from Hishiura Port",
+    noOpen: "No matching restaurants open today",
+    editTip: n => `Update <code>TODAY_OPEN = [...]</code> daily to set open restaurants (currently ${n} listed)`,
+    footer: "Travel times estimated from Hishiura Port (Kinnyamonya Center) · Updated regularly",
+  },
+  fr: {
+    siteTitle:    "Guide des Restaurants d'Ama-cho",
+    siteSubtitle: "海士町飲食店情報",
+    openBadge:    n => `${n} restaurant${n>1?'s':''} ouvert${n>1?'s':''} aujourd'hui`,
+    openSection:  "Ouvert aujourd'hui",
+    closedSection:"Fermé aujourd'hui",
+    open: "Ouvert", closed: "Fermé",
+    lunch:"Déj.", dinner:"Dîner",
+    walk:"À pied", bike:"Vélo", car:"Voiture", min:" min",
+    fromPort: "depuis le port de Hishiura",
+    noOpen: "Aucun restaurant ouvert pour ce filtre",
+    editTip: n => `Mettez à jour <code>TODAY_OPEN = [...]</code> chaque jour (${n} restaurant${n>1?'s':''} configuré${n>1?'s':''})`,
+    footer: "Temps de trajet depuis le port de Hishiura (Centre Kinnyamonya) · Mis à jour régulièrement",
+  },
+};
+
+// ================================================================
+// 店舗マスターデータ（海士町全14店）
+// dist from 菱浦港（キンニャモニャセンター）推定
+// ================================================================
+const SHOPS = [
+  {
+    id: "sentoraru",
+    name: "船渡来流亭（せんとらるてい）",
+    category: "local",
+    hours: {
+      lunch:  { ja:"11:00–15:00（L.O.14:30）", zh:"11:00–15:00（最後點餐14:30）", en:"11:00–15:00 (L.O. 14:30)", fr:"11:00–15:00 (D.C. 14:30)" },
+      dinner: null,
+    },
+    menu: {
+      ja: { star:"島の名物定食", items:["島の名物定食","創作料理","カフェ"] },
+      zh: { star:"島嶼名物定食", items:["島嶼名物定食","創意料理","咖啡廳"] },
+      en: { star:"Island Signature Set", items:["Island Set Meal","Creative Dishes","Café"] },
+      fr: { star:"Menu spécialités", items:["Menu spécialités de l'île","Cuisine créative","Espace café"] },
+    },
+    dist: { walk:1, bike:1, car:1 },
+    note: {
+      ja:"キンニャモニャセンター内。港から徒歩1分。定休日なし。",
+      zh:"位於キンニャモニャセンター內。距港口步行1分鐘。全年無休。",
+      en:"Inside Kinnyamonya Center, 1 min walk from the port. No regular holidays.",
+      fr:"Dans le Centre Kinnyamonya, à 1 min du port. Ouvert tous les jours.",
+    },
+  },
+  {
+    id: "happy_kitchen",
+    name: "Happy Kitchen Will",
+    category: "takeout",
+    hours: {
+      lunch: { ja:"11:00–19:00（日・木：菱浦公民館前）", zh:"11:00–19:00（週日・週四：菱浦公民館前）", en:"11:00–19:00 (Sun & Thu: Hishiura Kominkan)", fr:"11:00–19:00 (dim. & jeu. : Kominkan de Hishiura)" },
+      dinner: null,
+    },
+    menu: {
+      ja: { star:"日替わりランチ", items:["キッチンカー","日替わりランチ","テイクアウト"] },
+      zh: { star:"每日特餐", items:["餐車","每日特餐","外帶"] },
+      en: { star:"Daily Lunch Special", items:["Food Truck","Daily Lunch","Takeout"] },
+      fr: { star:"Plat du jour", items:["Food Truck","Plat du jour","À emporter"] },
+    },
+    dist: { walk:5, bike:3, car:2 },
+    note: {
+      ja:"場所が曜日によって変わります。金・月は西ノ島で営業、火・水・土は定休。",
+      zh:"位置依星期不同。週五・週一在西之島，週二・三・六公休。",
+      en:"Location varies by day. Fri & Mon: Nishinoshima island. Closed Tue/Wed/Sat.",
+      fr:"L'emplacement varie selon les jours. Ven & lun : Nishinoshima. Fermé mar/mer/sam.",
+    },
+  },
+  {
+    id: "kikurage",
+    name: "きくらげちゃかぽんMOTEKOIYO",
+    category: "local",
+    hours: {
+      lunch:  { ja:"11:30–14:00", zh:"11:30–14:00", en:"11:30–14:00", fr:"11:30–14:00" },
+      dinner: { ja:"土祝のみ 18:00–21:30（L.O.20:30）", zh:"僅週六・假日 18:00–21:30", en:"Sat & Holidays only 18:00–21:30", fr:"Sam & jours fériés : 18:00–21:30" },
+    },
+    menu: {
+      ja: { star:"日替わり定食", items:["日替わり定食","海士の本気米","カフェ 14:00–16:00","地酒"] },
+      zh: { star:"每日特餐", items:["每日特餐","海士正宗米飯","咖啡 14:00–16:00","在地清酒"] },
+      en: { star:"Daily Set Meal", items:["Daily Set","Ama Local Rice","Café 14:00–16:00","Local Sake"] },
+      fr: { star:"Plat du jour", items:["Plat du jour","Riz local d'Ama","Café 14:00–16:00","Saké local"] },
+    },
+    dist: { walk:3, bike:2, car:1 },
+    note: {
+      ja:"港から徒歩3分。野菜もお米もお皿も全部海士町産！定休日：木曜日。",
+      zh:"距港口步行3分鐘。蔬菜、米飯、餐具全部海士町當地！週四公休。",
+      en:"3 min from port. All ingredients & tableware from Ama-cho. Closed Thursdays.",
+      fr:"À 3 min du port. Tout vient d'Ama-cho. Fermé le jeudi.",
+    },
+  },
+  {
+    id: "sushi_riku",
+    name: "鮨陸",
+    category: "sea",
+    hours: {
+      lunch:  { ja:"11:30–13:30（L.O.13:00）", zh:"11:30–13:30（最後點餐13:00）", en:"11:30–13:30 (L.O. 13:00)", fr:"11:30–13:30 (D.C. 13:00)" },
+      dinner: { ja:"19:00–21:30（完全予約制・コースのみ）", zh:"19:00–21:30（完全預約制・僅套餐）", en:"19:00–21:30 (Reservation only · Course menu)", fr:"19:00–21:30 (Réservation requise · menu uniquement)" },
+    },
+    menu: {
+      ja: { star:"海鮮丼", items:["海鮮丼","握り寿司コース","地魚"] },
+      zh: { star:"海鮮丼", items:["海鮮丼","握壽司套餐","在地鮮魚"] },
+      en: { star:"Seafood Rice Bowl", items:["Seafood Bowl","Sushi Omakase","Local Fish"] },
+      fr: { star:"Bol de fruits de mer", items:["Bol sashimi","Omakase sushi","Poisson local"] },
+    },
+    dist: { walk:3, bike:2, car:1 },
+    note: {
+      ja:"夜は要予約。カウンター7席の名店。不定休。",
+      zh:"晚餐需預約。7席的壽司吧。不定休。",
+      en:"Dinner reservation required. Intimate 7-seat counter. Irregular holidays.",
+      fr:"Réservation obligatoire le soir. Comptoir de 7 places. Fermeture irrégulière.",
+    },
+  },
+  {
+    id: "okigyu",
+    name: "島生まれ島育ち 隠岐牛店",
+    category: "beef",
+    hours: {
+      lunch:  { ja:"11:00–13:30", zh:"11:00–13:30", en:"11:00–13:30", fr:"11:00–13:30" },
+      dinner: { ja:"17:00–21:30（L.O.20:45）", zh:"17:00–21:30（最後點餐20:45）", en:"17:00–21:30 (L.O. 20:45)", fr:"17:00–21:30 (D.C. 20:45)" },
+    },
+    menu: {
+      ja: { star:"隠岐牛焼肉", items:["隠岐牛焼肉","ランチ定食","精肉販売"] },
+      zh: { star:"隱岐牛燒肉", items:["隱岐牛燒肉","午餐定食","精肉販售"] },
+      en: { star:"Oki Wagyu BBQ", items:["Oki Wagyu BBQ","Set Lunch","Beef Retail"] },
+      fr: { star:"Bœuf d'Oki grillé", items:["Bœuf d'Oki grillé","Menu déjeuner","Vente de viande"] },
+    },
+    dist: { walk:8, bike:4, car:2 },
+    note: {
+      ja:"生産者直営。繁忙期は予約推奨。定休日：日曜日。",
+      zh:"生產者直營。旺季建議預約。週日公休。",
+      en:"Producer-run. Reservations recommended in peak season. Closed Sundays.",
+      fr:"Géré par l'éleveur. Réservation conseillée en haute saison. Fermé le dimanche.",
+    },
+  },
+  {
+    id: "ajikura",
+    name: "海鮮処 味蔵",
+    category: "sea",
+    hours: {
+      lunch:  null,
+      dinner: { ja:"18:00–22:00（L.O.21:30）", zh:"18:00–22:00（最後點餐21:30）", en:"18:00–22:00 (L.O. 21:30)", fr:"18:00–22:00 (D.C. 21:30)" },
+    },
+    menu: {
+      ja: { star:"海鮮丼", items:["海鮮丼","日替わり定食","地酒","おつまみ"] },
+      zh: { star:"海鮮丼", items:["海鮮丼","每日定食","在地清酒","小菜"] },
+      en: { star:"Seafood Bowl", items:["Seafood Bowl","Daily Set","Local Sake","Bar Snacks"] },
+      fr: { star:"Bol de fruits de mer", items:["Bol sashimi","Plat du jour","Saké local","Tapas"] },
+    },
+    dist: { walk:7, bike:4, car:2 },
+    note: {
+      ja:"夜のみ営業。定休日：日曜日。",
+      zh:"僅晚間營業。週日公休。",
+      en:"Dinner only. Closed Sundays.",
+      fr:"Dîner uniquement. Fermé le dimanche.",
+    },
+  },
+  {
+    id: "radice",
+    name: "Italian Cafe Radice（ラディーチェ）",
+    category: "cafe",
+    hours: {
+      lunch:  { ja:"土曜のみ 13:00–16:00", zh:"僅週六 13:00–16:00", en:"Sat only 13:00–16:00", fr:"Sam uniquement 13:00–16:00" },
+      dinner: { ja:"火〜土 18:00–22:00（L.O.21:00）要予約", zh:"週二〜六 18:00–22:00（需預約）", en:"Tue–Sat 18:00–22:00 (Reservation required)", fr:"Mar–sam 18:00–22:00 (réservation requise)" },
+    },
+    menu: {
+      ja: { star:"本格イタリアン", items:["日替わりパスタ","ピザ","地元食材コース","カフェ"] },
+      zh: { star:"正宗義大利料理", items:["每日義大利麵","披薩","在地食材套餐","咖啡"] },
+      en: { star:"Authentic Italian", items:["Daily Pasta","Pizza","Local Ingredient Course","Café"] },
+      fr: { star:"Cuisine italienne", items:["Pâtes du jour","Pizza","Menu produits locaux","Café"] },
+    },
+    dist: { walk:10, bike:5, car:3 },
+    note: {
+      ja:"ディナーは要予約。カフェは火〜金 14:00–16:00。定休日：日・月曜。",
+      zh:"晚餐需預約。咖啡：週二至五 14:00–16:00。週日・週一公休。",
+      en:"Dinner reservation required. Café: Tue–Fri 14:00–16:00. Closed Sun & Mon.",
+      fr:"Dîner sur réservation. Café : mar–ven 14:00–16:00. Fermé dim & lun.",
+    },
+  },
+  {
+    id: "konya",
+    name: "紺屋",
+    category: "izakaya",
+    hours: {
+      lunch:  null,
+      dinner: { ja:"18:00–22:00（食事L.O.21:00）※事前確認推奨", zh:"18:00–22:00（建議事前確認）", en:"18:00–22:00 (Confirm in advance)", fr:"18:00–22:00 (Confirmer à l'avance)" },
+    },
+    menu: {
+      ja: { star:"その日の鮮魚", items:["刺身","海鮮料理","地酒","ご島地グルメ"] },
+      zh: { star:"當日鮮魚", items:["生魚片","海鮮料理","在地清酒","島嶼佳餚"] },
+      en: { star:"Fresh Catch of the Day", items:["Sashimi","Seafood Dishes","Local Sake","Island Cuisine"] },
+      fr: { star:"Poisson frais du jour", items:["Sashimi","Fruits de mer","Saké local","Cuisine insulaire"] },
+    },
+    dist: { walk:8, bike:4, car:2 },
+    note: {
+      ja:"不定休。仕入れと客にあわせて守備範囲広い一軒。事前問い合わせ推奨。",
+      zh:"不定休。菜單依當日食材而定。建議事前確認。",
+      en:"Irregular holidays. Menu varies with the day's catch. Call ahead.",
+      fr:"Fermeture irrégulière. Menu selon arrivage. Appelez avant de venir.",
+    },
+  },
+  {
+    id: "karan",
+    name: "食事処 華蘭",
+    category: "local",
+    hours: {
+      lunch:  { ja:"11:30–14:00", zh:"11:30–14:00", en:"11:30–14:00", fr:"11:30–14:00" },
+      dinner: { ja:"18:00–21:00（L.O.20:30）", zh:"18:00–21:00（最後點餐20:30）", en:"18:00–21:00 (L.O. 20:30)", fr:"18:00–21:00 (D.C. 20:30)" },
+    },
+    menu: {
+      ja: { star:"日替わり定食", items:["和食","中華","洋食","居酒屋メニュー"] },
+      zh: { star:"每日定食", items:["日式料理","中式料理","西式料理","居酒屋菜單"] },
+      en: { star:"Daily Set Meal", items:["Japanese","Chinese","Western","Izakaya Menu"] },
+      fr: { star:"Menu du jour", items:["Japonais","Chinois","Occidental","Menu izakaya"] },
+    },
+    dist: { walk:10, bike:5, car:3 },
+    note: {
+      ja:"和洋中なんでもある定食屋。定休日：月・木曜。",
+      zh:"和洋中通吃的定食店。週一・週四公休。",
+      en:"Japanese, Western & Chinese — all under one roof. Closed Mon & Thu.",
+      fr:"Japonais, occidental et chinois au même endroit. Fermé lun & jeu.",
+    },
+  },
+  {
+    id: "yachiyo",
+    name: "八千代",
+    category: "sea",
+    hours: {
+      lunch:  { ja:"11:30–13:30", zh:"11:30–13:30", en:"11:30–13:30", fr:"11:30–13:30" },
+      dinner: { ja:"18:00–21:00（L.O.20:00）", zh:"18:00–21:00（最後點餐20:00）", en:"18:00–21:00 (L.O. 20:00)", fr:"18:00–21:00 (D.C. 20:00)" },
+    },
+    menu: {
+      ja: { star:"海鮮丼", items:["海鮮丼","かつ丼","ちゃんぽん","握り寿司","うな丼（日による）"] },
+      zh: { star:"海鮮丼", items:["海鮮丼","炸豬排丼","強棒麵","握壽司","鰻魚丼（依日）"] },
+      en: { star:"Seafood Bowl", items:["Seafood Bowl","Katsu Don","Champon Noodles","Sushi","Eel Bowl (varies)"] },
+      fr: { star:"Bol de fruits de mer", items:["Bol sashimi","Katsu don","Champon","Sushi","Bol d'anguille (selon jours)"] },
+    },
+    dist: { walk:9, bike:5, car:2 },
+    note: {
+      ja:"定食からお寿司まで。定休日：月曜日。",
+      zh:"從定食到壽司都有。週一公休。",
+      en:"From set meals to sushi. Closed Mondays.",
+      fr:"Du menu du jour aux sushis. Fermé le lundi.",
+    },
+  },
+  {
+    id: "kamenoo",
+    name: "亀乃",
+    category: "local",
+    hours: {
+      lunch:  { ja:"11:00–13:30", zh:"11:00–13:30", en:"11:00–13:30", fr:"11:00–13:30" },
+      dinner: null,
+    },
+    menu: {
+      ja: { star:"ハンバーグ定食", items:["ハンバーグ定食","生姜焼き定食","洋食","テイクアウト（夜のみ）"] },
+      zh: { star:"漢堡排定食", items:["漢堡排定食","薑燒豬肉定食","洋食","外帶（僅晚間）"] },
+      en: { star:"Hamburg Steak Set", items:["Hamburg Steak Set","Ginger Pork Set","Western Food","Takeout (dinner only)"] },
+      fr: { star:"Steak haché japonais", items:["Steak haché set","Porc au gingembre","Cuisine occidentale","À emporter (soir)"] },
+    },
+    dist: { walk:12, bike:6, car:3 },
+    note: {
+      ja:"夜はテイクアウトのみ。地元民に愛される老舗洋食屋。定休日：火曜日。",
+      zh:"晚上僅外帶。深受當地人喜愛的老牌西洋料理店。週二公休。",
+      en:"Dinner takeout only. A beloved local Western diner. Closed Tuesdays.",
+      fr:"Dîner en emporter uniquement. Restaurant occidental apprécié des locaux. Fermé mardi.",
+    },
+  },
+  {
+    id: "hana_ponta",
+    name: "花屋のポンタ",
+    category: "izakaya",
+    hours: {
+      lunch:  null,
+      dinner: { ja:"17:30–21:00", zh:"17:30–21:00", en:"17:30–21:00", fr:"17:30–21:00" },
+    },
+    menu: {
+      ja: { star:"お好み焼き", items:["お好み焼き","焼きそば","鉄板焼き"] },
+      zh: { star:"大阪燒", items:["大阪燒","炒麵","鐵板燒"] },
+      en: { star:"Okonomiyaki", items:["Okonomiyaki","Yakisoba","Teppanyaki"] },
+      fr: { star:"Okonomiyaki", items:["Okonomiyaki","Yakisoba","Teppanyaki"] },
+    },
+    dist: { walk:15, bike:7, car:4 },
+    note: {
+      ja:"名前は花屋だけど鉄板焼き屋さん。定休日：日・月曜。",
+      zh:"名字是花店，實際上是鐵板燒餐廳。週日・週一公休。",
+      en:"The name says 'flower shop' — it's actually teppanyaki! Closed Sun & Mon.",
+      fr:"Le nom dit « fleuriste » mais c'est du teppanyaki ! Fermé dim & lun.",
+    },
+  },
+  {
+    id: "kura",
+    name: "島のほけんしつ『蔵 kura』",
+    category: "cafe",
+    hours: {
+      lunch:  { ja:"9:00–17:00", zh:"9:00–17:00", en:"9:00–17:00", fr:"9:00–17:00" },
+      dinner: null,
+    },
+    menu: {
+      ja: { star:"オリジナルハーブティー", items:["ハーブティー","コーヒー","軽食","コワーキング可"] },
+      zh: { star:"原創草本茶", items:["草本茶","咖啡","輕食","可共同作業"] },
+      en: { star:"Original Herbal Tea", items:["Herbal Tea","Coffee","Light Meals","Coworking OK"] },
+      fr: { star:"Tisane originale", items:["Tisane maison","Café","Repas légers","Coworking possible"] },
+    },
+    dist: { walk:6, bike:3, car:2 },
+    note: {
+      ja:"不定休。コワーキングスペースとしても利用可。",
+      zh:"不定休。也可作為共同工作空間。",
+      en:"Irregular holidays. Also available as a coworking space.",
+      fr:"Fermeture irrégulière. Espace de coworking disponible.",
+    },
+  },
+  {
+    id: "ritokitchen",
+    name: "離島キッチン海士",
+    category: "local",
+    hours: {
+      lunch:  { ja:"11:00–14:00（10名以上・要予約）", zh:"11:00–14:00（10名以上・需預約）", en:"11:00–14:00 (10+ guests, reservation only)", fr:"11:00–14:00 (10+ personnes, sur réservation)" },
+      dinner: { ja:"18:00–20:30（10名以上・要予約）", zh:"18:00–20:30（10名以上・需預約）", en:"18:00–20:30 (10+ guests, reservation only)", fr:"18:00–20:30 (10+ personnes, sur réservation)" },
+    },
+    menu: {
+      ja: { star:"島の食材フルコース", items:["海士町産食材のみ","季節の島料理","完全予約制"] },
+      zh: { star:"島嶼食材全套料理", items:["僅使用海士町食材","季節島嶼料理","完全預約制"] },
+      en: { star:"Island Full Course", items:["Ama-cho ingredients only","Seasonal Island Cuisine","Reservation required"] },
+      fr: { star:"Menu dégustation insulaire", items:["Ingrédients 100% Ama-cho","Cuisine saisonnière","Sur réservation uniquement"] },
+    },
+    dist: { walk:20, bike:10, car:5 },
+    note: {
+      ja:"10日前までに要予約。10名〜36名。隠岐神社の講堂を利用。",
+      zh:"需10天前預約。10至36名。借用隱岐神社講堂。",
+      en:"Reserve 10+ days ahead. Groups of 10–36. Located in Oki Shrine's hall.",
+      fr:"Réservez 10+ jours à l'avance. 10–36 personnes. Dans la salle du sanctuaire d'Oki.",
+    },
+  },
+];
+
+// ================================================================
+// App State
+// ================================================================
+let currentLang   = 'ja';
+let currentFilter = 'all';
+
+const CATEGORIES = [
+  { id:'all',     label:{ ja:"すべて",    zh:"全部",    en:"All",          fr:"Tout" } },
+  { id:'sea',     label:{ ja:"🐟 海鮮",   zh:"🐟 海鮮", en:"🐟 Seafood",    fr:"🐟 Fruits de mer" } },
+  { id:'local',   label:{ ja:"🍚 定食",   zh:"🍚 定食", en:"🍚 Set Meals",  fr:"🍚 Menu" } },
+  { id:'cafe',    label:{ ja:"☕ カフェ", zh:"☕ 咖啡廳",en:"☕ Café",       fr:"☕ Café" } },
+  { id:'izakaya', label:{ ja:"🍶 居酒屋", zh:"🍶 居酒屋",en:"🍶 Izakaya",   fr:"🍶 Izakaya" } },
+  { id:'beef',    label:{ ja:"🥩 隠岐牛", zh:"🥩 隱岐牛",en:"🥩 Oki Beef",  fr:"🥩 Bœuf d'Oki" } },
+  { id:'takeout', label:{ ja:"🍱 テイクアウト",zh:"🍱 外帶",en:"🍱 Takeout",fr:"🍱 À emporter" } },
+];
+
+function formatDate(d, lang) {
+  if (lang === 'ja') {
+    const days = ["日","月","火","水","木","金","土"];
+    return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${days[d.getDay()]}）`;
+  }
+  if (lang === 'zh') {
+    const days = ["日","一","二","三","四","五","六"];
+    return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（週${days[d.getDay()]}）`;
+  }
+  const opts = { weekday:'long', year:'numeric', month:'long', day:'numeric' };
+  return d.toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US', opts);
+}
+
+function buildCard(shop, isOpen, lang) {
+  const L = lang;
+  const i = I18N[L];
+  const m = shop.menu[L];
+  const h = shop.hours;
+
+  const tags = m.items.map(item =>
+    `<span class="tag${item===m.star?' star':''}">${item}</span>`
+  ).join('');
+
+  let hoursHtml = '';
+  if (h.lunch)  hoursHtml += `<div class="hours-row"><span class="meal-label">${i.lunch}</span> ${h.lunch[L]}</div>`;
+  if (h.dinner) hoursHtml += `<div class="hours-row"><span class="meal-label">${i.dinner}</span> ${h.dinner[L]}</div>`;
+
+  const note = shop.note
+    ? `<div class="note">※ ${shop.note[L]}</div>` : '';
+  const pill = isOpen
+    ? `<span class="status-pill pill-open">${i.open}</span>`
+    : `<span class="status-pill pill-closed">${i.closed}</span>`;
+
+  return `
+    <div class="card${isOpen?'':' closed'}">
+      <div class="card-top">
+        <div class="shop-name">${shop.name}</div>
+        ${pill}
+      </div>
+      <div class="dists">
+        <span class="dist">🚶 ${i.walk} ${shop.dist.walk}${i.min}</span>
+        <span class="dist">🚲 ${i.bike} ${shop.dist.bike}${i.min}</span>
+        <span class="dist">🚗 ${i.car} ${shop.dist.car}${i.min}</span>
+        <span class="dist dist-from">${i.fromPort}</span>
+      </div>
+      <div class="tags">${tags}</div>
+      <div class="hours">${hoursHtml}</div>
+      ${note}
+    </div>`;
+}
+
+function render() {
+  const L = currentLang;
+  const i = I18N[L];
+  const today = new Date();
+
+  const openShops   = SHOPS.filter(s => TODAY_OPEN.includes(s.id));
+  const closedShops = SHOPS.filter(s => !TODAY_OPEN.includes(s.id));
+
+  // static text
+  document.getElementById('site-title').textContent    = i.siteTitle;
+  document.getElementById('site-subtitle').textContent = i.siteSubtitle;
+  document.getElementById('today-date').textContent    = formatDate(today, L);
+  document.getElementById('open-badge').textContent    = i.openBadge(openShops.length);
+  document.getElementById('edit-tip').innerHTML        = i.editTip(TODAY_OPEN.length);
+  document.getElementById('footer-text').textContent   = i.footer;
+  document.documentElement.lang = L === 'zh' ? 'zh-TW' : L;
+
+  // tabs
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    const cat = CATEGORIES.find(c => c.id === btn.dataset.filter);
+    if (cat) btn.textContent = cat.label[L];
+  });
+
+  // lang buttons
+  document.querySelectorAll('.lang-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.lang === L)
+  );
+
+  // filter
+  const fOpen   = currentFilter==='all' ? openShops   : openShops.filter(s=>s.category===currentFilter);
+  const fClosed = currentFilter==='all' ? closedShops : closedShops.filter(s=>s.category===currentFilter);
+
+  let html = '';
+  if (fOpen.length) {
+    html += `<div class="section-label">${i.openSection}</div>`;
+    fOpen.forEach(s => { html += buildCard(s, true, L); });
+  } else {
+    html += `<div class="empty">${i.noOpen}</div>`;
+  }
+  if (fClosed.length && currentFilter==='all') {
+    html += `<div class="section-label" style="margin-top:28px">${i.closedSection}</div>`;
+    fClosed.forEach(s => { html += buildCard(s, false, L); });
+  }
+  document.getElementById('cards-container').innerHTML = html;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.lang-btn').forEach(btn => {
+    btn.addEventListener('click', () => { currentLang = btn.dataset.lang; render(); });
+  });
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentFilter = btn.dataset.filter;
+      render();
+    });
+  });
+  render();
+});
+</script>
+
+<!-- DOM -->
+<div class="edit-tip" id="edit-tip"></div>
+
+<div class="lang-bar">
+  <button class="lang-btn" data-lang="ja">日本語</button>
+  <button class="lang-btn" data-lang="zh">繁體中文</button>
+  <button class="lang-btn" data-lang="en">English</button>
+  <button class="lang-btn" data-lang="fr">Français</button>
+</div>
+
+<header>
+  <div class="site-title" id="site-title"></div>
+  <div class="site-subtitle" id="site-subtitle"></div>
+  <div class="header-meta">
+    <span class="today-date" id="today-date"></span>
+    <span class="open-badge" id="open-badge"></span>
+  </div>
+</header>
+
+<nav class="tabs">
+  <button class="tab-btn active" data-filter="all"></button>
+  <button class="tab-btn" data-filter="sea"></button>
+  <button class="tab-btn" data-filter="local"></button>
+  <button class="tab-btn" data-filter="cafe"></button>
+  <button class="tab-btn" data-filter="izakaya"></button>
+  <button class="tab-btn" data-filter="beef"></button>
+  <button class="tab-btn" data-filter="takeout"></button>
+</nav>
+
+<main>
+  <div id="cards-container"></div>
+</main>
+
+<footer><span id="footer-text"></span></footer>
+</body>
+</html>
